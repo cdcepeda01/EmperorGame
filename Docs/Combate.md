@@ -61,3 +61,21 @@ BP_EnemyGASP_Ragdoll hereda de SandboxCharacter_Mover_Ragdoll. Conserva el inici
 El cilindro fue reemplazado en L_Blockout_Nivel01; BP_TrainingDummy permanece como fixture de las pruebas anteriores. No se modificaron los Blueprints originales de GASP en este cambio.
 
 BP_GASPRagdollTest comprueba 75 de vida tras un golpe, 25 y vivo tras tres, cero y muerto tras cuatro y el perfil Ragdoll con pelvis simulando fisica seis segundos despues. Las cuatro comprobaciones pasaron. El primer impacto de espada tambien se verifico manualmente. El actor temporal de prueba fue retirado.
+
+## Colision del jugador con enemigos
+
+La capsula `CollisionCylinder` de `SandboxCharacter_CMC` tenia una respuesta personalizada Ignore al canal Pawn. Se cambio esa respuesta a Block; la capsula del enemigo GASP ya bloqueaba Pawn. El jugador conserva QueryAndPhysics y sus respuestas anteriores para los otros canales.
+
+`BP_PawnCollisionTest` reproduce el fallo cambiando temporalmente Pawn a Ignore en PIE y despues verifica que dos desplazamientos con sweep, desde lados opuestos del enemigo, se detienen en su capsula. Las tres comprobaciones pasaron. Una segunda sesion sin el actor de prueba confirmo Pawn = Block en la capsula del jugador al iniciar. El actor temporal fue retirado; el Blueprint de prueba permanece disponible en Developers/CombatTests. Copia anterior del jugador: `Saved/PawnCollisionBackup/SandboxCharacter_CMC.uasset`.
+
+## Asistencia automatica al golpear
+
+El clic izquierdo existente llama a `AC_Combat.StartWeaponAttack`. Antes de reproducir el montage se calcula GetInputRot, se guarda la direccion del golpe y, si hay un rival valido, se orienta al personaje hacia el. No se agregaron controles, seguimiento de camara ni bloqueo persistente de objetivo. La ayuda solo se consulta al iniciar cada ataque.
+
+`ChooseAttackTarget` busca instancias vivas de BP_EnemyGASP_Ragdoll dentro de 230 cm, con una diferencia vertical maxima de 100 cm y un cono de 120 grados. Usa la direccion de movimiento; estando quieto, usa la direccion horizontal de la camara para buscar. Prioriza proximidad y alineacion y comprueba visibilidad con LineOfSightTo. Si no hay candidato, GetInputRot conserva su comportamiento anterior: entrada de movimiento o rotacion actual. Los parametros AttackAssistRadius, AttackAssistMinDot (0,5) y AttackAssistMaxHeight se ajustan en el componente AC_Combat del jugador.
+
+El trace de la espada conserva sus sockets, tamano y ventanas de animacion. `CanDamageEnemy` permite dano solo a enemigos GASP vivos y visibles; los objetos neutrales con AC_Health ya no reciben dano de la espada del jugador. El dano sigue requiriendo contacto de la hoja y respeta el registro de objetivos alcanzados una vez por golpe. BP_TrainingDummy y su prueba historica de dano ya no representan enemigos validos bajo este filtro; para comprobar impactos actuales se usa BP_AttackAssistTest.
+
+`BP_AttackAssistTest` paso nueve comprobaciones en PIE: seleccion entre varios rivales, orientacion antes del montage, impacto real unico de 25, rechazo de rivales detras o lejanos, rechazo de muertos, filtro de neutrales, ausencia de dano a neutrales, rechazo de objetivos ocultos por una pared y ausencia de dano a traves de esa pared. No hubo Blueprint Runtime Error ni Accessed None. Los tres Blueprints involucrados compilaron con warnings tratados como errores y el actor temporal se retiro.
+
+No se modificaron los grafos de locomocion del jugador; la comparacion de todas las propiedades de CharacterMovement con la copia anterior no encontro diferencias, normalizando las rutas de la copia de auditoria. Copias anteriores a esta etapa: Saved/AttackAssistBackup.

@@ -6,3 +6,6 @@ approval_mode = "approve"
 
 [mcp_servers.unreal-mcp.tools.describe_toolset]
 approval_mode = "approve"
+
+[mcp_servers.unreal-mcp.tools.list_toolsets]
+approval_mode = "approve"
